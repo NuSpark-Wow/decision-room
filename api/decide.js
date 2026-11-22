@@ -46,7 +46,7 @@ const CATEGORIES = {
   law: {
     name: 'Law & Justice', ratings: STD, style: 'real', audience: 'general',
     disclaimer: 'Educational only — not legal advice. Laws vary by state; for your own situation, talk to a licensed attorney.',
-    brief: 'Juror decisions, "is this legal?" situations, small claims and civil disputes, minor criminal cases and white-collar red flags. NO murders or violent crime. Fictional people only. Teach concepts like reasonable doubt, burden of proof and evidence. Note when rules vary by state.',
+    brief: 'Juror decisions on criminal trials (theft, burglary, DUI, vandalism, shoplifting, car break-ins), "is this legal?" situations, everyday disputes, know-your-rights moments, and occasionally white-collar red flags. NO murders or violent crime. Fictional people only. Teach concepts like reasonable doubt, burden of proof and evidence. Note when rules vary by state.',
     seeds: ['juror: shoplifting case with a shaky witness', 'small claims: landlord kept the deposit', 'is this legal? recording a phone call', 'fender bender: who is at fault?', 'juror: stolen bike, circumstantial evidence', 'white-collar red flags in the company books', 'a contract signed but never read', 'a neighbor\'s tree falls on your fence', 'juror: vandalism case with security footage']
   },
   detective: {
@@ -79,6 +79,34 @@ const CATEGORIES = {
     name: 'The Treasure Hunt', ratings: STD, style: 'story', audience: 'family',
     brief: 'Imaginary family-friendly treasure adventures. Choices are paths, tools or clue readings. Outcomes are STORY consequences, but make the "best" choice fair: the setup contains clues (sounds, markings, weather, map notes) that reward careful thinking. No violence or scary gore.',
     seeds: ['three tunnels inside an ancient temple', 'a pirate map with a torn corner', 'the old lighthouse riddle', 'desert ruins at sunset', 'a rope bridge in the jungle', 'a sunken ship\'s cabin', 'a mountain cave with an echo', 'a mysterious mansion attic']
+  }
+};
+
+
+// Optional sub-choices for some categories (Mix = all seeds)
+const SUBS = {
+  final: {
+    basketball: { label: 'Basketball', seeds: ['down 2, final possession', 'up 3 with 8 seconds left: foul or defend?', 'last shot: star player or open teammate?', 'timeout or push the ball after a rebound?', 'free-throw shooter is cold in the final minute'] },
+    football: { label: 'Football', seeds: ['4th-and-goal from the 2, down 4', 'go for 2 after a late touchdown', 'onside kick or deep kick?', 'kneel down or try to score before halftime?', 'long field goal or punt on 4th-and-3'] },
+    baseball: { label: 'Baseball', seeds: ['tie game, bottom of the 9th, runner on 2nd', 'intentionally walk the slugger?', 'bunt or swing away with no outs', 'pull the tiring starter or stay?', 'steal second with two outs in the 9th?'] },
+    soccer: { label: 'Soccer', seeds: ['choosing penalty shootout order', 'up 1 with 5 minutes left: defend or keep attacking?', 'last substitution in stoppage time', 'your keeper vs their best penalty taker', 'free kick at the edge of the box'] },
+    hockey: { label: 'Hockey', seeds: ['when to pull the goalie', 'challenge an offside call on a tying goal?', 'power play in overtime: who goes out?', 'shootout order', 'down 1 with a faceoff in their zone'] }
+  },
+  science: {
+    experiments: { label: 'Experiments', seeds: ['an experiment gives an unexpected result before the science fair', 'one data point looks way off', 'lab safety: a strange smell during an experiment', 'testing a hypothesis with a small sample', 'choosing a control group', 'your results contradict the textbook'] },
+    history: { label: 'Real History', history: true, seeds: ['real history: a moldy petri dish (Fleming, 1928)', 'real history: Apollo 13 needs a CO2 fix (1970)', 'real history: the Wright brothers and wind-tunnel data (1901)', 'real history: Jonas Salk testing the polio vaccine (1954)', 'real history: Marie Curie and the glowing samples (1898)', 'real history: Edward Jenner and the smallpox idea (1796)'] }
+  },
+  law: {
+    juror: { label: "Juror's Seat", seeds: ['juror: shoplifting case with a shaky witness', 'juror: burglary case with fingerprints but no stolen items found', 'juror: DUI case with a disputed breath test', 'juror: car break-in caught on a blurry doorbell camera', 'juror: vandalism case with security footage', 'juror: stolen bike, circumstantial evidence'] },
+    legal: { label: 'Is This Legal?', seeds: ['is this legal? recording a phone call', 'is this legal? keeping money you found on the sidewalk', 'is this legal? a neighbor\'s camera pointed at your yard', 'is this legal? reselling concert tickets above face value', 'is this legal? taking fruit from a tree hanging over your fence', 'is this legal? leaving a child in the car for two minutes'] },
+    disputes: { label: 'Everyday Disputes', seeds: ['small claims: landlord kept the deposit', 'fender bender: who is at fault?', 'a contractor took the deposit and disappeared', 'a neighbor\'s tree falls on your fence', 'a dry cleaner ruined an expensive jacket', 'a friend never paid back a loan'] },
+    rights: { label: 'Know Your Rights', seeds: ['a traffic stop: the officer asks to search your car', 'police knock and ask questions at your door', 'you get a jury duty summons during a busy week', 'filming police in public', 'a store employee wants to check your bag', 'you\'re asked for ID while walking downtown'] }
+  },
+  daily: {
+    food: { label: 'Food', seeds: ['the healthiest side vegetable with steak', 'the best breakfast before a busy morning', 'healthiest way to cook chicken for the week', 'a smart snack for a long road trip', 'which cooking oil for high-heat cooking'] },
+    home: { label: 'Home & Shopping', seeds: ['firm, medium or soft mattress for a side sleeper', 'TV size for a small living room', 'a houseplant for a low-light apartment', 'LED bulb color for a bedroom', 'vacuum type for a home with pets'] },
+    clothing: { label: 'Clothing', seeds: ['jeans fit for a desk job', 'what to wear to a job interview at a casual company', 'layering for a cold, windy day', 'running shoe type for a beginner', 'packing clothes for a rainy weekend trip'] },
+    fitness: { label: 'Stretches & Fitness', seeds: ['a stretch for a tight lower back after a long drive', 'warming up before a weekend pickup game', 'a beginner starting to walk for exercise', 'stretching for stiff shoulders from a desk job', 'how to start strength training at home'] }
   }
 };
 
@@ -193,7 +221,12 @@ async function makeScenario(body) {
   if (!cat) throw new Error('Unknown category');
   const seen = (Array.isArray(body.seen) ? body.seen : []).slice(-20).map(s => clip(s, 120));
   const target = (() => { const x = Math.random(); return x < 0.45 ? 'one' : x < 0.8 ? 'two' : 'all'; })();
-  const seed = pick(cat.seeds);
+  const subs = SUBS[body.category] || {};
+  const sub = subs[body.sub] ? body.sub : 'mix';
+  const subDef = subs[sub];
+  const pool = subDef ? subDef.seeds : cat.seeds.concat(...Object.values(subs).map(x => x.seeds));
+  const seed = pick(pool);
+  const historyMode = cat.style === 'history' || !!(subDef && subDef.history) || /^real history/i.test(seed);
   const r = cat.ratings;
   const goodSet = r === KIDS ? '"Best Call" or "Good Call"' : '"Best Call" or "Solid Call"';
   const targetText = target === 'one'
@@ -215,10 +248,10 @@ async function makeScenario(body) {
     '- ' + targetText,
     '- Be accurate. If unsure of a fact, leave it out.',
     'Call the respond tool with an object in this exact shape:',
-    '{"title":"short catchy title (max 8 words)","setup":"the situation in 2 short paragraphs (separate with \\n\\n)' + (cat.audience === 'kids' ? ', under 70 words total' : ', under 170 words total') + '","question":"the decision question, one sentence","options":[{"id":"A","text":"choice, max 22 words"},{"id":"B","text":"..."},{"id":"C","text":"..."}],"answers":{"A":{"rating":"one of the allowed ratings","why":"1-2 sentence private reason"},"B":{...},"C":{...}},"verdict":"1-2 sentence overall verdict","real_world":"' + (cat.style === 'history' ? 'what actually happened in history, 2-4 sentences' : cat.style === 'story' ? '' : 'what usually happens in real life / what experts say, 1-3 sentences') + '"}'
+    '{"title":"short catchy title (max 8 words)","setup":"the situation in 2 short paragraphs (separate with \\n\\n)' + (cat.audience === 'kids' ? ', under 70 words total' : ', under 170 words total') + '","question":"the decision question, one sentence","options":[{"id":"A","text":"choice, max 22 words"},{"id":"B","text":"..."},{"id":"C","text":"..."}],"answers":{"A":{"rating":"one of the allowed ratings","why":"1-2 sentence private reason"},"B":{...},"C":{...}},"verdict":"1-2 sentence overall verdict","real_world":"' + (historyMode ? 'what actually happened in history, 2-4 sentences' : cat.style === 'story' ? '' : 'what usually happens in real life / what experts say, 1-3 sentences') + '"}'
   ].join('\n');
 
-  const user = 'Write one new scenario. Topic idea to build from (adapt freely): ' + seed +
+  const user = 'Write one new scenario.' + (subDef ? ' Focus: ' + subDef.label + '.' : '') + ' Topic idea to build from (adapt freely): ' + seed +
     (seen.length ? '\nDo NOT repeat or closely resemble these titles already played: ' + seen.join(' | ') : '');
 
   let data, attempt = 0;
@@ -258,9 +291,10 @@ async function makeScenario(body) {
     verdict: clip(data.verdict, 600),
     verdictType,
     realWorld: clip(data.real_world, 900),
+    history: historyMode,
     t: Date.now()
   };
-  return { ...pub, token: seal(hidden), disclaimer: cat.disclaimer || '' };
+  return { ...pub, sub, subLabel: subDef ? subDef.label : '', token: seal(hidden), disclaimer: cat.disclaimer || '' };
 }
 
 async function advisorTalk(body) {
@@ -271,23 +305,42 @@ async function advisorTalk(body) {
   if (!chosen) throw new Error('Pick an option first');
   const ids = (Array.isArray(body.advisors) ? body.advisors : []).filter(id => ADVISORS[id]).slice(0, 2);
   if (!ids.length) return { comments: [] };
+  // Second opinion: one new advisor reacts to the pick AND to what was already said
+  const earlier = (Array.isArray(body.earlier) ? body.earlier : []).slice(0, 6)
+    .filter(c => ADVISORS[c.id]).map(c => ({ id: c.id, text: clip(c.text, 600) }));
+  const second = body.mode === 'second' && earlier.length > 0;
+
+  let shape, plan;
+  if (second) {
+    plan = 'A NEW advisor (' + ids[0] + ') joins as a second opinion. Write ONE comment from ' + ids[0] + ' that reacts to the player\'s pick AND responds directly to what the earlier advisor said (agree on something, push back on something). 2–4 sentences.';
+    shape = '{"comments":[{"id":"' + ids[0] + '","text":"..."}]}';
+  } else if (ids.length === 2) {
+    plan = 'Write a quick 4-line debate, in this exact order: (1) ' + ids[0] + ' reacts to the pick; (2) ' + ids[1] + ' reacts to the pick; (3) ' + ids[0] + ' responds directly to what ' + ids[1] + ' just said; (4) ' + ids[1] + ' responds directly to what ' + ids[0] + ' said. Lines 1–2: 2–3 sentences. Lines 3–4: 1–2 sentences, playful back-and-forth.';
+    shape = '{"comments":[{"id":"' + ids[0] + '","text":"..."},{"id":"' + ids[1] + '","text":"..."},{"id":"' + ids[0] + '","text":"..."},{"id":"' + ids[1] + '","text":"..."}]}';
+  } else {
+    plan = 'Write ONE comment from ' + ids[0] + ' reacting to the pick. 2–3 sentences.';
+    shape = '{"comments":[{"id":"' + ids[0] + '","text":"..."}]}';
+  }
 
   // Advisors are NOT told the hidden answer — so they truly can't give it away.
   const system = [
     'You voice on-screen advisor characters in "The Decision Room," a decision game. The player has picked an answer but has NOT locked it in. The advisors react before the player decides "Are you sure?"',
-    'Advisors in the room:', ...ids.map(id => '- ' + id + ': ' + ADVISORS[id]),
+    'Advisors:', ...Array.from(new Set(ids.concat(earlier.map(c => c.id)))).map(id => '- ' + id + ': ' + ADVISORS[id]),
     audienceRules(cat),
     'RULES:',
     '- Nobody knows the correct answer. Never claim the pick is right or wrong, and never reveal or hint at a final answer.',
-    '- Each advisor gives BOTH something that supports the pick AND a doubt or question to consider, in their own personality.',
-    '- 2–3 sentences each, punchy and fun. If there are two advisors, the second may react to the first.',
-    '- Do not use the other options\' letters to steer the player. Stay neutral.',
-    'Call the respond tool with: {"comments":[{"id":"advisor id","text":"..."}]}'
+    '- Across their lines, each advisor gives BOTH something that supports the pick AND a doubt or question to consider, in their own personality.',
+    '- Punchy, fun, in character. Do not use the other options\' letters to steer the player. Stay neutral.',
+    '- Do not end with "your turn" — the game adds that.',
+    'PLAN: ' + plan,
+    'Call the respond tool with: ' + shape
   ].join('\n');
   const user = 'SCENARIO: ' + h.title + '\n' + h.setup + '\nQUESTION: ' + h.question + '\nOPTIONS:\n' +
-    h.options.map(o => o.id + ') ' + o.text).join('\n') + '\n\nPLAYER\'S PICK: ' + chosen.id + ') ' + chosen.text;
-  const data = await claudeJSON(system, user, 900);
-  const comments = (data.comments || []).filter(c => ADVISORS[c.id] && ids.includes(c.id)).map(c => ({ id: c.id, text: clip(c.text, 600) }));
+    h.options.map(o => o.id + ') ' + o.text).join('\n') + '\n\nPLAYER\'S PICK: ' + chosen.id + ') ' + chosen.text +
+    (earlier.length ? '\n\nWHAT THE EARLIER ADVISOR(S) SAID:\n' + earlier.map(c => c.id + ': ' + c.text).join('\n') : '');
+  const data = await claudeJSON(system, user, second ? 500 : 1200);
+  const comments = (data.comments || []).filter(c => ADVISORS[c.id] && ids.includes(c.id))
+    .slice(0, second || ids.length === 1 ? 1 : 4).map(c => ({ id: c.id, text: clip(c.text, 700) }));
   return { comments };
 }
 
@@ -325,7 +378,7 @@ async function reveal(body) {
     };
   });
   return {
-    sections, verdict: h.verdict, verdictType: h.verdictType, realWorld: h.realWorld,
+    sections, verdict: h.verdict, verdictType: h.verdictType, realWorld: h.realWorld, history: !!h.history,
     takeaway: clip(data.takeaway, 800), myRating: h.answers[choice].rating, disclaimer: cat.disclaimer || ''
   };
 }
