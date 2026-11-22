@@ -130,6 +130,32 @@ async function claude(system, user, maxTokens) {
   return (j.content || []).map(c => c.text || '').join('');
 }
 
+// Asks Claude for structured data using a forced tool call, so the reply is
+// always a clean JSON object (no stray text, no parsing guesswork).
+async function claudeJSON(system, user, maxTokens) {
+  if (!API_KEY) throw new Error('Missing ANTHROPIC_API_KEY');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: MODEL, max_tokens: maxTokens, system,
+      tools: [{ name: 'respond', description: 'Return your answer as a JSON object in the exact shape described in the instructions.', input_schema: { type: 'object', additionalProperties: true } }],
+      tool_choice: { type: 'tool', name: 'respond' },
+      messages: [{ role: 'user', content: user }]
+    })
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error((j.error && j.error.message) || 'AI service error');
+  const blocks = j.content || [];
+  const tool = blocks.find(b => b.type === 'tool_use');
+  if (tool && tool.input && typeof tool.input === 'object') return tool.input;
+  const text = blocks.map(b => b.text || '').join('');
+  try { return parseJSON(text); } catch (e) {
+    console.error('decision-room raw reply:', j.stop_reason, JSON.stringify(blocks).slice(0, 400));
+    throw new Error('No JSON in reply (stop: ' + j.stop_reason + ')');
+  }
+}
+
 function hostAllowed(req) {
   const src = req.headers.origin || req.headers.referer || '';
   if (!src) return false;
@@ -188,7 +214,7 @@ async function makeScenario(body) {
     '- Allowed ratings: ' + r.map(x => '"' + x + '"').join(', ') + '.',
     '- ' + targetText,
     '- Be accurate. If unsure of a fact, leave it out.',
-    'Reply with ONLY this JSON (no other text):',
+    'Call the respond tool with an object in this exact shape:',
     '{"title":"short catchy title (max 8 words)","setup":"the situation in 2 short paragraphs (separate with \\n\\n)' + (cat.audience === 'kids' ? ', under 70 words total' : ', under 170 words total') + '","question":"the decision question, one sentence","options":[{"id":"A","text":"choice, max 22 words"},{"id":"B","text":"..."},{"id":"C","text":"..."}],"answers":{"A":{"rating":"one of the allowed ratings","why":"1-2 sentence private reason"},"B":{...},"C":{...}},"verdict":"1-2 sentence overall verdict","real_world":"' + (cat.style === 'history' ? 'what actually happened in history, 2-4 sentences' : cat.style === 'story' ? '' : 'what usually happens in real life / what experts say, 1-3 sentences') + '"}'
   ].join('\n');
 
@@ -199,7 +225,7 @@ async function makeScenario(body) {
   while (attempt < 2) {
     attempt++;
     try {
-      data = parseJSON(await claude(system, user, 1600));
+      data = await claudeJSON(system, user, 2000);
       if (Array.isArray(data.options) && data.options.length === 3 && data.answers) break;
     } catch (e) { if (attempt >= 2) throw e; }
   }
@@ -256,11 +282,11 @@ async function advisorTalk(body) {
     '- Each advisor gives BOTH something that supports the pick AND a doubt or question to consider, in their own personality.',
     '- 2–3 sentences each, punchy and fun. If there are two advisors, the second may react to the first.',
     '- Do not use the other options\' letters to steer the player. Stay neutral.',
-    'Reply with ONLY JSON: {"comments":[{"id":"advisor id","text":"..."}]}'
+    'Call the respond tool with: {"comments":[{"id":"advisor id","text":"..."}]}'
   ].join('\n');
   const user = 'SCENARIO: ' + h.title + '\n' + h.setup + '\nQUESTION: ' + h.question + '\nOPTIONS:\n' +
     h.options.map(o => o.id + ') ' + o.text).join('\n') + '\n\nPLAYER\'S PICK: ' + chosen.id + ') ' + chosen.text;
-  const data = parseJSON(await claude(system, user, 700));
+  const data = await claudeJSON(system, user, 900);
   const comments = (data.comments || []).filter(c => ADVISORS[c.id] && ids.includes(c.id)).map(c => ({ id: c.id, text: clip(c.text, 600) }));
   return { comments };
 }
@@ -280,13 +306,13 @@ async function reveal(body) {
     'For EACH option give: what could go right (2–3 bullets), what could go wrong (2–3 bullets), and "how it plays out" — a vivid mini-story of the outcome' + (cat.audience === 'kids' ? ' (3–4 short sentences)' : ' (4–6 sentences)') + '.',
     'Then a "takeaway": the big lesson in 2–3 sentences' + (cat.audience === 'kids' ? ', simple and kind.' : '.'),
     'Accurate facts only. No brands. Talk to the player as "you".',
-    'Reply with ONLY JSON: {"sections":[{"id":"A","right":["..."],"wrong":["..."],"playsOut":"..."}],"takeaway":"..."}'
+    'Call the respond tool with: {"sections":[{"id":"A","right":["..."],"wrong":["..."],"playsOut":"..."}],"takeaway":"..."}'
   ].join('\n');
   const user = 'SCENARIO: ' + h.title + '\n' + h.setup + '\nQUESTION: ' + h.question + '\n\nOPTIONS WITH LOCKED RATINGS:\n' +
     h.options.map(o => o.id + ') ' + o.text + ' — ' + h.answers[o.id].rating + ' (reason: ' + h.answers[o.id].why + ')').join('\n') +
     '\n\nOVERALL VERDICT: ' + h.verdict + (h.realWorld ? '\nREAL WORLD NOTE: ' + h.realWorld : '') +
     '\n\nThe player chose ' + choice + '. Write sections in this order: ' + order.map(o => o.id).join(', ') + ' (player\'s choice last).';
-  const data = parseJSON(await claude(system, user, 3000));
+  const data = await claudeJSON(system, user, 4000);
   const byId = {};
   (data.sections || []).forEach(s => { byId[String(s.id || '').toUpperCase()] = s; });
   const sections = order.map(o => {
