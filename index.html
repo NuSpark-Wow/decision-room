@@ -633,9 +633,11 @@ $('advDone').onclick=function(){ $('advModal').classList.add('hidden'); };
 $('advModal').addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
 
 /* ---------- Auto-height for website embeds ---------- */
-var lastH=0;
-function postHeight(){ setTimeout(function(){ var h=document.documentElement.scrollHeight; if(Math.abs(h-lastH)>4){ lastH=h; try{ parent.postMessage({type:'decision-room-height',height:h},'*'); }catch(e){} } },60); }
-window.addEventListener('resize',postHeight);
+/* Measures the tool's own content, never the frame, so the page can't keep growing itself */
+var lastH=0, lastW=window.innerWidth;
+function contentH(){ var b=document.body, cs=getComputedStyle(b); return Math.ceil(b.getBoundingClientRect().height+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0)); }
+function postHeight(){ setTimeout(function(){ var h=contentH(); if(Math.abs(h-lastH)>4){ lastH=h; try{ parent.postMessage({type:'decision-room-height',height:h},'*'); }catch(e){} } },60); }
+window.addEventListener('resize',function(){ if(window.innerWidth!==lastW){ lastW=window.innerWidth; postHeight(); } });
 
 renderBanner(); renderScore(); renderAdvisors(); renderGroups(); postHeight();
 })();
