@@ -64,6 +64,12 @@ header.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:220px
 .catBtns{display:grid;gap:8px}
 .cat{display:flex;align-items:center;gap:12px;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;transition:.15s}
 .cat:hover{border-color:var(--amber);transform:translateY(-1px)}
+.own{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+.own h3{font-size:18px;color:var(--navy);margin-bottom:4px}
+.own .ex{font-size:14px;color:var(--muted);margin:0 0 8px}
+.ownRow{display:flex;gap:10px;flex-wrap:wrap}
+.ownRow input{flex:1;min-width:220px;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit}
+.ownRow input:focus{outline:none;border-color:var(--amber)}
 .cat .ci{font-size:26px;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--cream);flex:none}
 .cat .ct{font-weight:800;color:var(--navy);font-size:16px}
 .cat .cd{font-size:13px;color:var(--muted);line-height:1.3}
@@ -208,6 +214,11 @@ footer{text-align:center;color:var(--muted);font-size:13px;margin-top:26px}
       <h2>Pick a category</h2>
       <p class="sub">Each round gives you a fresh scenario with three choices.</p>
       <div class="groups" id="groups"></div>
+      <div class="own">
+        <h3>✏️ Or choose your own topic</h3>
+        <p class="ex">Type any topic and get a scenario about it. Examples: buying a used car, the Apollo 11 landing, a first job interview, adopting a dog.</p>
+        <div class="ownRow"><input id="ownTopic" maxlength="120" aria-label="Your own topic"><button class="btn amber" id="ownGo">Start</button></div>
+      </div>
     </div>
   </section>
 
@@ -283,6 +294,7 @@ var SUBS = {
   daily:{hint:'Pick a topic, or mix them up.', list:[['food','🥦 Food'],['home','🛏️ Home & Shopping'],['clothing','👖 Clothing'],['fitness','🧘 Stretches & Fitness']]}
 };
 var CAT = {}; GROUPS.forEach(function(g){ g.cats.forEach(function(c){ CAT[c.id]=c; }); });
+CAT.custom={id:'custom',name:'Your Topic',icon:'✏️'};
 
 var ADV = [
   {id:'gus', name:'Gus', role:'The Gut', cp:'"Feels right. Go with it!"'},
@@ -336,7 +348,7 @@ function face(id){
 }
 
 /* ---------- State ---------- */
-var S = {advisors:[], sub:'mix', comments:[], secondUsed:false, cat:null, sc:null, choice:null, phase:'choose', history:[], seen:{}, busy:false};
+var S = {advisors:[], sub:'mix', topic:'', comments:[], secondUsed:false, cat:null, sc:null, choice:null, phase:'choose', history:[], seen:{}, busy:false};
 var SCORE = {rounds:0,best:0,streak:0};
 try { var sv = JSON.parse(sessionStorage.getItem('dr_score')||'null'); if(sv) SCORE=sv; var sa=JSON.parse(sessionStorage.getItem('dr_adv')||'null'); if(Array.isArray(sa)) S.advisors=sa.filter(function(x){return ADVMAP[x];}).slice(0,2); } catch(e){}
 
@@ -432,17 +444,18 @@ function showErr(where,msg){ var d=document.createElement('div'); d.className='e
 /* ---------- Round flow ---------- */
 function show(view){ $('home').classList.toggle('hidden',view!=='home'); $('round').classList.toggle('hidden',view!=='round'); window.scrollTo({top:0,behavior:'smooth'}); postHeight(); }
 
-function startRound(catId,sub){
+function startRound(catId,sub,topic){
   if(S.busy) return;
+  if(catId==='custom'){ if(topic!=null) S.topic=topic; } else S.topic='';
   S.cat=catId; S.sub=sub||'mix'; S.sc=null; S.choice=null; S.phase='choose'; S.history=[]; S.comments=[]; S.secondUsed=false;
   var c=CAT[catId], sl=subLabel(catId,S.sub);
-  $('rTag').textContent=c.icon+' '+c.name+(sl?' · '+sl:'');
-  var seenKey=catId+':'+S.sub;
+  $('rTag').textContent=c.icon+' '+c.name+(sl?' · '+sl:'')+(catId==='custom'&&S.topic?' · '+S.topic:'');
+  var seenKey=catId+':'+S.sub+(catId==='custom'?':'+S.topic.toLowerCase():'');
   S.busy=true; $('newSc').disabled=true;
   show('round');
   var body=$('rBody'); body.innerHTML='';
   var L=loader('scenario'); body.appendChild(L);
-  api({action:'scenario',category:catId,sub:S.sub,seen:S.seen[seenKey]||[]}).then(function(sc){
+  api({action:'scenario',category:catId,sub:S.sub,topic:S.topic,seen:S.seen[seenKey]||[]}).then(function(sc){
     L._stop(); S.sc=sc;
     (S.seen[seenKey]=S.seen[seenKey]||[]).push(sc.title);
     renderScenario();
@@ -611,6 +624,8 @@ function askFollow(){
 $('backHome').onclick=function(){ show('home'); };
 $('newSc').onclick=function(){ if(S.cat) startRound(S.cat,S.sub); };
 $('subStart').onclick=function(){ $('subModal').classList.add('hidden'); startRound(pendingCat,pendingSub); };
+$('ownGo').onclick=function(){ var t=$('ownTopic').value.trim(); if(!t){ $('ownTopic').focus(); return; } startRound('custom','mix',t); };
+$('ownTopic').addEventListener('keydown',function(e){ if(e.key==='Enter') $('ownGo').click(); });
 $('subCancel').onclick=function(){ $('subModal').classList.add('hidden'); };
 $('subModal').addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
 $('changeAdv').onclick=function(){ $('advModal').classList.remove('hidden'); };
