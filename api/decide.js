@@ -75,6 +75,12 @@ const CATEGORIES = {
     brief: 'Simple everyday choices for kids ages 5–10: friendship, honesty, sharing, school. Very short sentences, simple words, warm and encouraging. Never shaming.',
     seeds: ['a friend is left out at recess', 'you broke something at home', 'you find a dollar on the playground', 'a new kid sits alone at lunch', 'your little brother wants your toy', 'homework or play first?', 'someone wants to trade lunches', 'you forgot your homework']
   },
+  custom: {
+    name: 'Your Topic', ratings: STD, style: 'real', audience: 'general',
+    disclaimer: 'General info for learning, not professional advice.',
+    brief: 'A scenario built around a topic the player typed in. Make it a realistic everyday, work, money, history, science, sports or family decision about that topic. If the topic is a real historical event, put the player in that moment and use real_world for what actually happened. If the topic is harmful, sexual, hateful, involves violence, self-harm or how to commit a crime, do NOT use it: write a gentle, family-friendly scenario on a safe, related everyday topic instead.',
+    seeds: ['an everyday decision']
+  },
   treasure: {
     name: 'The Treasure Hunt', ratings: STD, style: 'story', audience: 'family',
     brief: 'Imaginary family-friendly treasure adventures. Choices are paths, tools or clue readings. Outcomes are STORY consequences, but make the "best" choice fair: the setup contains clues (sounds, markings, weather, map notes) that reward careful thinking. No violence or scary gore.',
@@ -224,7 +230,9 @@ async function makeScenario(body) {
   const subs = SUBS[body.category] || {};
   const sub = subs[body.sub] ? body.sub : 'mix';
   const subDef = subs[sub];
-  const pool = subDef ? subDef.seeds : cat.seeds.concat(...Object.values(subs).map(x => x.seeds));
+  const custom = body.category === 'custom' ? clip(body.topic, 120).trim() : '';
+  if (body.category === 'custom' && !custom) throw new Error('Type a topic first');
+  const pool = custom ? [custom] : subDef ? subDef.seeds : cat.seeds.concat(...Object.values(subs).map(x => x.seeds));
   const seed = pick(pool);
   const historyMode = cat.style === 'history' || !!(subDef && subDef.history) || /^real history/i.test(seed);
   const r = cat.ratings;
@@ -251,7 +259,7 @@ async function makeScenario(body) {
     '{"title":"short catchy title (max 8 words)","setup":"the situation in 2 short paragraphs (separate with \\n\\n)' + (cat.audience === 'kids' ? ', under 70 words total' : ', under 170 words total') + '","question":"the decision question, one sentence","options":[{"id":"A","text":"choice, max 22 words"},{"id":"B","text":"..."},{"id":"C","text":"..."}],"answers":{"A":{"rating":"one of the allowed ratings","why":"1-2 sentence private reason"},"B":{...},"C":{...}},"verdict":"1-2 sentence overall verdict","real_world":"' + (historyMode ? 'what actually happened in history, 2-4 sentences' : cat.style === 'story' ? '' : 'what usually happens in real life / what experts say, 1-3 sentences') + '"}'
   ].join('\n');
 
-  const user = 'Write one new scenario.' + (subDef ? ' Focus: ' + subDef.label + '.' : '') + ' Topic idea to build from (adapt freely): ' + seed +
+  const user = 'Write one new scenario.' + (subDef ? ' Focus: ' + subDef.label + '.' : '') + (custom ? ' The player chose this topic (stay on it unless it breaks the rules): ' + custom : ' Topic idea to build from (adapt freely): ' + seed) +
     (seen.length ? '\nDo NOT repeat or closely resemble these titles already played: ' + seen.join(' | ') : '');
 
   let data, attempt = 0;
