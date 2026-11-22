@@ -71,6 +71,18 @@ header.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:220px
 /* Round */
 .roundTop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .tag{display:inline-flex;gap:6px;align-items:center;background:var(--navy);color:#fff;border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px}
+.topBtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sbtn{border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:10px;padding:7px 12px;font-weight:800;font-size:14px}
+.sbtn:hover:not(:disabled){background:#f3f6fc}
+.sbtn:disabled{opacity:.45;cursor:not-allowed}
+.yourTurn{margin-top:14px;font-family:'Fraunces',serif;font-weight:800;font-size:20px;color:var(--navy)}
+.pickRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.miniAdv{display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px 4px 4px;font-weight:800;color:var(--navy);font-size:14px}
+.miniAdv:hover{border-color:var(--amber)}
+.miniAdv .av{width:34px;height:34px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-weight:800;color:var(--navy);font-size:15px}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .linkBtn{background:none;border:none;color:var(--navy);font-weight:800;text-decoration:underline;font-size:14px;padding:4px}
 .scTitle{font-size:clamp(24px,3.6vw,32px);color:var(--navy);margin:12px 0 8px}
 .setup p{margin:0 0 10px}
@@ -204,9 +216,10 @@ footer{text-align:center;color:var(--muted);font-size:13px;margin-top:26px}
     <div class="panel">
       <div class="roundTop">
         <span class="tag" id="rTag"></span>
-        <div>
+        <div class="topBtns">
+          <button class="sbtn" id="newSc">🔄 Choose another scenario</button>
+          <button class="sbtn" id="backHome">🏠 Return to top screen</button>
           <button class="linkBtn" id="changeAdv">Change advisors</button>
-          <button class="linkBtn" id="backHome">All categories</button>
         </div>
       </div>
       <div id="rBody"></div>
@@ -214,6 +227,16 @@ footer{text-align:center;color:var(--muted);font-size:13px;margin-top:26px}
   </section>
 
   <footer>The Decision Room · Learn...Wow! · Scenarios are created by AI for learning and fun.</footer>
+</div>
+
+<!-- Sub-choice modal -->
+<div class="modal hidden" id="subModal">
+  <div class="panel">
+    <h2 id="subTitle"></h2>
+    <p class="sub" id="subHint"></p>
+    <div class="chips" id="subChips"></div>
+    <div class="btnRow"><button class="btn amber" id="subStart">Start</button><button class="btn ghost" id="subCancel">Cancel</button></div>
+  </div>
 </div>
 
 <!-- Advisor modal -->
@@ -253,6 +276,12 @@ var GROUPS = [
     {id:'detective', name:"Detective's Choice", icon:'🔍', desc:'Follow the right lead. Crack the case.'}
   ]}
 ];
+var SUBS = {
+  final:{hint:'Pick a sport, or mix them up.', list:[['basketball','🏀 Basketball'],['football','🏈 Football'],['baseball','⚾ Baseball'],['soccer','⚽ Soccer'],['hockey','🏒 Hockey']]},
+  science:{hint:'Lab experiments, real moments from science history, or both.', list:[['experiments','🧪 Experiments'],['history','📜 Real History']]},
+  law:{hint:'Pick the kind of case.', list:[['juror',"🧑‍⚖️ Juror's Seat"],['legal','❓ Is This Legal?'],['disputes','🏘️ Everyday Disputes'],['rights','🛡️ Know Your Rights']]},
+  daily:{hint:'Pick a topic, or mix them up.', list:[['food','🥦 Food'],['home','🛏️ Home & Shopping'],['clothing','👖 Clothing'],['fitness','🧘 Stretches & Fitness']]}
+};
 var CAT = {}; GROUPS.forEach(function(g){ g.cats.forEach(function(c){ CAT[c.id]=c; }); });
 
 var ADV = [
@@ -307,7 +336,7 @@ function face(id){
 }
 
 /* ---------- State ---------- */
-var S = {advisors:[], cat:null, sc:null, choice:null, phase:'choose', history:[], seen:{}, busy:false};
+var S = {advisors:[], sub:'mix', comments:[], secondUsed:false, cat:null, sc:null, choice:null, phase:'choose', history:[], seen:{}, busy:false};
 var SCORE = {rounds:0,best:0,streak:0};
 try { var sv = JSON.parse(sessionStorage.getItem('dr_score')||'null'); if(sv) SCORE=sv; var sa=JSON.parse(sessionStorage.getItem('dr_adv')||'null'); if(Array.isArray(sa)) S.advisors=sa.filter(function(x){return ADVMAP[x];}).slice(0,2); } catch(e){}
 
@@ -358,9 +387,27 @@ function renderGroups(){
       '</div></div>';
   }).join('');
   Array.prototype.forEach.call(document.querySelectorAll('[data-cat]'),function(b){
-    b.addEventListener('click',function(){ startRound(b.getAttribute('data-cat')); });
+    b.addEventListener('click',function(){ chooseCat(b.getAttribute('data-cat')); });
   });
 }
+
+/* ---------- Sub-choices ---------- */
+var pendingCat=null, pendingSub='mix';
+function chooseCat(catId){
+  var sd=SUBS[catId];
+  if(!sd){ startRound(catId,'mix'); return; }
+  pendingCat=catId; pendingSub='mix';
+  $('subTitle').textContent=CAT[catId].icon+' '+CAT[catId].name;
+  $('subHint').textContent=sd.hint;
+  renderChips();
+  $('subModal').classList.remove('hidden');
+}
+function renderChips(){
+  var sd=SUBS[pendingCat], all=[['mix','🎲 Mix']].concat(sd.list);
+  $('subChips').innerHTML=all.map(function(c){ return '<button type="button" class="chip'+(pendingSub===c[0]?' on':'')+'" data-sub="'+c[0]+'">'+esc(c[1])+'</button>'; }).join('');
+  Array.prototype.forEach.call($('subChips').querySelectorAll('[data-sub]'),function(b){ b.onclick=function(){ pendingSub=b.getAttribute('data-sub'); renderChips(); }; });
+}
+function subLabel(catId,sub){ var sd=SUBS[catId]; if(!sd||sub==='mix') return ''; var f=sd.list.filter(function(x){return x[0]===sub;})[0]; return f?f[1].replace(/^\S+\s/,''):''; }
 
 /* ---------- API ---------- */
 function api(payload){
@@ -385,18 +432,22 @@ function showErr(where,msg){ var d=document.createElement('div'); d.className='e
 /* ---------- Round flow ---------- */
 function show(view){ $('home').classList.toggle('hidden',view!=='home'); $('round').classList.toggle('hidden',view!=='round'); window.scrollTo({top:0,behavior:'smooth'}); postHeight(); }
 
-function startRound(catId){
-  S.cat=catId; S.sc=null; S.choice=null; S.phase='choose'; S.history=[];
-  var c=CAT[catId];
-  $('rTag').textContent=c.icon+' '+c.name;
+function startRound(catId,sub){
+  if(S.busy) return;
+  S.cat=catId; S.sub=sub||'mix'; S.sc=null; S.choice=null; S.phase='choose'; S.history=[]; S.comments=[]; S.secondUsed=false;
+  var c=CAT[catId], sl=subLabel(catId,S.sub);
+  $('rTag').textContent=c.icon+' '+c.name+(sl?' · '+sl:'');
+  var seenKey=catId+':'+S.sub;
+  S.busy=true; $('newSc').disabled=true;
   show('round');
   var body=$('rBody'); body.innerHTML='';
   var L=loader('scenario'); body.appendChild(L);
-  api({action:'scenario',category:catId,seen:S.seen[catId]||[]}).then(function(sc){
+  api({action:'scenario',category:catId,sub:S.sub,seen:S.seen[seenKey]||[]}).then(function(sc){
     L._stop(); S.sc=sc;
-    (S.seen[catId]=S.seen[catId]||[]).push(sc.title);
+    (S.seen[seenKey]=S.seen[seenKey]||[]).push(sc.title);
     renderScenario();
-  }).catch(function(e){ L._stop(); showErr(body,e.message); addRetry(body,function(){startRound(catId);}); });
+  }).catch(function(e){ L._stop(); showErr(body,e.message); addRetry(body,function(){startRound(catId,S.sub);}); })
+    .then(function(){ S.busy=false; $('newSc').disabled=false; });
 }
 function addRetry(where,fn){ var r=document.createElement('div'); r.className='btnRow'; r.innerHTML='<button class="btn">Try again</button>'; r.querySelector('button').onclick=fn; where.appendChild(r); }
 
@@ -420,30 +471,65 @@ function renderScenario(){
   postHeight();
 }
 
+function bubble(id,text,side){
+  var a=ADVMAP[id]; if(!a) return null;
+  var d=document.createElement('div'); d.className='bub'+(side?' alt':'');
+  d.innerHTML='<div class="av">'+face(id)+'</div><div class="bt"><div class="bn">'+esc(a.name)+' · '+esc(a.role)+'</div>'+esc(text)+'</div>';
+  return d;
+}
+function setBtns(on){ ['lockBtn','switchBtn','secondBtn'].forEach(function(id){ var b=$(id); if(b) b.disabled=!on; }); }
+function showYourTurn(){
+  var w=$('yourTurn'); if(!w) return;
+  w.textContent=S.comments.length?'Ok, your turn.':'';
+}
+function renderSecondBtn(){
+  var w=$('secondWrap'); if(!w) return;
+  if(S.secondUsed || S.advisors.length>=2){ w.innerHTML=''; return; }
+  w.innerHTML='<button class="sbtn" id="secondBtn">'+(S.advisors.length?'➕ Get a second opinion':'🙋 Ask an advisor')+'</button><div class="pickRow hidden" id="pickRow"></div>';
+  $('secondBtn').onclick=function(){
+    var pr=$('pickRow'); pr.classList.toggle('hidden');
+    var taken=S.advisors.concat(S.comments.map(function(c){return c.id;}));
+    pr.innerHTML=ADV.filter(function(a){return taken.indexOf(a.id)<0;}).map(function(a){
+      return '<button type="button" class="miniAdv" data-pick="'+a.id+'"><span class="av">'+face(a.id)+'</span>'+esc(a.name)+'</button>';
+    }).join('');
+    Array.prototype.forEach.call(pr.querySelectorAll('[data-pick]'),function(b){ b.onclick=function(){ askSecond(b.getAttribute('data-pick')); }; });
+    postHeight();
+  };
+}
+function askSecond(id){
+  if(S.busy) return; S.busy=true; S.secondUsed=true;
+  var w=$('secondWrap'); w.innerHTML='';
+  var bw=$('bubbles'), L=loader('advisors'); bw.appendChild(L); setBtns(false);
+  var earlier=S.comments.slice();
+  api({action:'advisors',token:S.sc.token,choice:S.choice,advisors:[id],mode:earlier.length?'second':'',earlier:earlier}).then(function(r){
+    L._stop();
+    (r.comments||[]).forEach(function(c){ var d=bubble(c.id,c.text,1); if(d){ bw.appendChild(d); S.comments.push(c); } });
+  }).catch(function(){ L._stop(); showErr(bw,'That advisor stepped out for a second. You can still lock it in.'); })
+    .then(function(){ S.busy=false; setBtns(true); showYourTurn(); postHeight(); });
+}
+
 function areYouSure(){
   if(!S.choice||S.busy) return;
-  S.phase='confirm'; renderScenario();
+  S.phase='confirm'; S.comments=[]; renderScenario();
   var stage=$('stage');
   var box=document.createElement('div'); box.className='sure';
   var chosen=S.sc.options.filter(function(o){return o.id===S.choice;})[0];
   box.innerHTML='<h3>Are you sure?</h3><p class="sub" style="margin-bottom:0">You picked <b>'+chosen.id+') '+esc(chosen.text)+'</b></p><div class="bubbles" id="bubbles"></div>'+
+    '<div id="secondWrap" style="margin-top:12px"></div><div class="yourTurn" id="yourTurn"></div>'+
     '<div class="btnRow"><button class="btn amber" id="lockBtn">🔒 Lock it in</button><button class="btn ghost" id="switchBtn">↩ Switch my answer</button></div>';
   stage.appendChild(box);
   $('lockBtn').onclick=lockIn;
   $('switchBtn').onclick=function(){ S.phase='choose'; renderScenario(); };
+  renderSecondBtn();
   if(S.advisors.length){
     var bw=$('bubbles'), L=loader('advisors'); bw.appendChild(L);
-    $('lockBtn').disabled=true; $('switchBtn').disabled=true;
-    api({action:'advisors',token:S.sc.token,choice:S.choice,advisors:S.advisors}).then(function(r){
+    S.busy=true; setBtns(false);
+    var room=S.advisors.slice();
+    api({action:'advisors',token:S.sc.token,choice:S.choice,advisors:room}).then(function(r){
       L._stop();
-      (r.comments||[]).forEach(function(c,i){
-        var a=ADVMAP[c.id]; if(!a) return;
-        var d=document.createElement('div'); d.className='bub'+(i%2?' alt':'');
-        d.innerHTML='<div class="av">'+face(c.id)+'</div><div class="bt"><div class="bn">'+esc(a.name)+' · '+esc(a.role)+'</div>'+esc(c.text)+'</div>';
-        bw.appendChild(d);
-      });
-    }).catch(function(e){ L._stop(); showErr(bw,'Your advisors stepped out for a second. You can still lock it in.'); })
-      .then(function(){ var l=$('lockBtn'),s=$('switchBtn'); if(l) l.disabled=false; if(s) s.disabled=false; postHeight(); });
+      (r.comments||[]).forEach(function(c){ var d=bubble(c.id,c.text,room.indexOf(c.id)===1); if(d){ bw.appendChild(d); S.comments.push(c); } });
+    }).catch(function(){ L._stop(); showErr(bw,'Your advisors stepped out for a second. You can still lock it in.'); })
+      .then(function(){ S.busy=false; setBtns(true); showYourTurn(); postHeight(); });
   }
   postHeight();
 }
@@ -491,7 +577,7 @@ function renderReveal(r){
   stage.appendChild(v); cards.push(v);
 
   var ex=document.createElement('div');
-  var catIsHistory=S.cat==='history';
+  var catIsHistory=!!r.history;
   ex.innerHTML=(r.takeaway?'<div class="extra"><b>💡 The takeaway:</b> '+esc(r.takeaway)+'</div>':'')+
     (r.realWorld?'<div class="extra"><b>'+(catIsHistory?'📜 What really happened:':'🌎 In real life:')+'</b> '+esc(r.realWorld)+'</div>':'')+
     (r.disclaimer?'<div class="disc">'+esc(r.disclaimer)+'</div>':'')+
@@ -504,7 +590,7 @@ function renderReveal(r){
   cards.forEach(function(c,i){ setTimeout(function(){ if(c.classList.contains('revCard')||c.classList.contains('verdict')) c.classList.add('show'); else c.style.opacity='1'; postHeight(); }, 350+i*900); });
 
   $('fuSend').onclick=askFollow;
-  $('nextBtn').onclick=function(){ startRound(S.cat); };
+  $('nextBtn').onclick=function(){ startRound(S.cat,S.sub); };
   $('homeBtn').onclick=function(){ show('home'); };
   postHeight();
 }
@@ -523,6 +609,10 @@ function askFollow(){
 
 /* ---------- Nav ---------- */
 $('backHome').onclick=function(){ show('home'); };
+$('newSc').onclick=function(){ if(S.cat) startRound(S.cat,S.sub); };
+$('subStart').onclick=function(){ $('subModal').classList.add('hidden'); startRound(pendingCat,pendingSub); };
+$('subCancel').onclick=function(){ $('subModal').classList.add('hidden'); };
+$('subModal').addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
 $('changeAdv').onclick=function(){ $('advModal').classList.remove('hidden'); };
 $('advDone').onclick=function(){ $('advModal').classList.add('hidden'); };
 $('advModal').addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
