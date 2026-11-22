@@ -417,6 +417,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   if (!hostAllowed(req)) return res.status(403).json({ error: 'This tool only runs on NuSpark sites.' });
+  if (!(await require('./_lwgate')(req, res, 'decision-room'))) return;
   if (!(await underLimit(req))) return res.status(429).json({ error: "You've reached today's limit. Come back tomorrow!" });
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
