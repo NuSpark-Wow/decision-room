@@ -123,7 +123,7 @@ async function claude(system, user, maxTokens) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] })
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens + 6000, system, messages: [{ role: 'user', content: user }] })
   });
   const j = await r.json();
   if (!r.ok) throw new Error((j.error && j.error.message) || 'AI service error');
@@ -138,9 +138,9 @@ async function claudeJSON(system, user, maxTokens) {
     method: 'POST',
     headers: { 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: MODEL, max_tokens: maxTokens, system,
+      model: MODEL, max_tokens: maxTokens + 6000, system: system + '\n\nIMPORTANT: Always answer by calling the respond tool. Do not reply with plain text.',
       tools: [{ name: 'respond', description: 'Return your answer as a JSON object in the exact shape described in the instructions.', input_schema: { type: 'object', additionalProperties: true } }],
-      tool_choice: { type: 'tool', name: 'respond' },
+      tool_choice: { type: 'auto' },
       messages: [{ role: 'user', content: user }]
     })
   });
