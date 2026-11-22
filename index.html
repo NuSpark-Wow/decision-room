@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Decision Room | Learn...Wow!</title>
+<meta name="description" content="A scenario comes up, the outcome stays hidden, and you make the call. 12 categories, six advisors, real reveals.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#14213d; --navy2:#1d2f55; --ink:#1b1f2a; --muted:#5b6475;
+  --amber:#f6a623; --amber2:#ffd27a; --cream:#fbf7ef; --card:#ffffff; --line:#e6e0d4;
+  --best:#1f9d55; --solid:#178a8f; --risky:#d98a00; --wrong:#d1453b;
+  --radius:16px; --shadow:0 6px 22px rgba(20,33,61,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Nunito Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--cream);color:var(--ink);line-height:1.55;font-size:17px}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;line-height:1.15;margin:0}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 40px}
+
+/* Banner */
+.banner{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 16px 0;max-width:1040px;margin:0 auto}
+.bTile{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background-size:cover;background-position:center;display:flex;align-items:flex-end;box-shadow:var(--shadow)}
+.bTile .em{position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);font-size:clamp(26px,4vw,44px);filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.bTile .cap{position:relative;width:100%;padding:6px 8px;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55));letter-spacing:.2px}
+.bTile.hasImg .em{display:none}
+
+/* Header */
+header.hero{background:var(--navy);color:#fff;border-radius:0 0 26px 26px;margin:12px auto 0;max-width:1040px;padding:26px 22px 22px;position:relative;overflow:hidden}
+header.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(var(--amber) 0,transparent 70%);opacity:.35}
+.hero h1{font-size:clamp(30px,5vw,46px);font-weight:800}
+.hero h1 span{color:var(--amber)}
+.hero p{margin:6px 0 0;color:#d9e0ee;font-size:18px}
+.score{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px}
+.pill b{color:var(--amber2)}
+
+/* Panels */
+.panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-top:18px}
+.panel h2{font-size:24px;color:var(--navy)}
+.sub{color:var(--muted);margin:4px 0 14px;font-size:15px}
+.step{display:inline-block;background:var(--amber);color:var(--navy);font-weight:800;border-radius:999px;font-size:12px;padding:2px 10px;margin-bottom:6px;letter-spacing:.5px}
+
+/* Advisors */
+.advGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.adv{border:2px solid var(--line);background:#fff;border-radius:14px;padding:10px 8px;text-align:center;transition:.15s;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;color:var(--ink)}
+.adv:hover{border-color:var(--amber)}
+.adv.on{border-color:var(--navy);background:#f3f6fc;box-shadow:0 0 0 3px rgba(246,166,35,.45)}
+.adv .av{width:68px;height:68px;margin:0 auto 6px}
+.adv .nm{font-weight:800;font-size:15px;color:var(--navy)}
+.adv .rl{font-size:12px;color:var(--muted);font-weight:700}
+.adv .cp{font-size:12px;color:var(--ink);margin-top:4px;font-style:italic;line-height:1.3}
+.adv .chk{position:absolute;top:6px;right:8px;background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;font-size:13px;display:none;align-items:center;justify-content:center;font-weight:800}
+.adv.on .chk{display:flex}
+.advNote{font-size:14px;color:var(--muted);margin-top:10px}
+
+/* Categories */
+.groups{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.group h3{font-size:18px;color:var(--navy);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.catBtns{display:grid;gap:8px}
+.cat{display:flex;align-items:center;gap:12px;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;transition:.15s}
+.cat:hover{border-color:var(--amber);transform:translateY(-1px)}
+.cat .ci{font-size:26px;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--cream);flex:none}
+.cat .ct{font-weight:800;color:var(--navy);font-size:16px}
+.cat .cd{font-size:13px;color:var(--muted);line-height:1.3}
+
+/* Round */
+.roundTop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tag{display:inline-flex;gap:6px;align-items:center;background:var(--navy);color:#fff;border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px}
+.linkBtn{background:none;border:none;color:var(--navy);font-weight:800;text-decoration:underline;font-size:14px;padding:4px}
+.scTitle{font-size:clamp(24px,3.6vw,32px);color:var(--navy);margin:12px 0 8px}
+.setup p{margin:0 0 10px}
+.question{font-weight:800;font-size:19px;color:var(--navy);background:#fff7e6;border-left:5px solid var(--amber);padding:10px 14px;border-radius:8px;margin:12px 0}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-size:17px;transition:.15s;width:100%}
+.opt:hover:not(:disabled){border-color:var(--amber)}
+.opt .lt{flex:none;width:34px;height:34px;border-radius:50%;background:var(--cream);font-weight:800;display:flex;align-items:center;justify-content:center;color:var(--navy);font-family:'Fraunces',serif}
+.opt.sel{border-color:var(--navy);background:#f3f6fc}
+.opt.sel .lt{background:var(--navy);color:#fff}
+.opt:disabled{cursor:default;color:var(--ink)}
+.opt:disabled:not(.sel){opacity:.75}
+.btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{border:none;border-radius:12px;padding:13px 20px;font-weight:800;font-size:16px;background:var(--navy);color:#fff;transition:.15s}
+.btn:hover:not(:disabled){background:var(--navy2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.amber{background:var(--amber);color:var(--navy)}
+.btn.amber:hover:not(:disabled){background:#ffb83f}
+.btn.ghost{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+.disc{font-size:13px;color:var(--muted);background:#f4f1ea;border-radius:10px;padding:8px 12px;margin-top:12px}
+
+/* Are you sure */
+.sure{margin-top:18px;border:2px dashed var(--amber);border-radius:16px;padding:16px;background:#fffdf7}
+.sure h3{font-size:22px;color:var(--navy)}
+.bubbles{display:grid;gap:12px;margin-top:12px}
+.bub{display:flex;gap:12px;align-items:flex-start}
+.bub .av{width:56px;height:56px;flex:none}
+.bub .bt{background:#fff;border:2px solid var(--line);border-radius:4px 16px 16px 16px;padding:10px 14px;position:relative}
+.bub .bn{font-weight:800;color:var(--navy);font-size:14px}
+.bub.alt{flex-direction:row-reverse}
+.bub.alt .bt{border-radius:16px 4px 16px 16px;background:#f3f6fc}
+
+/* Reveal */
+.revCard{border:2px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;background:#fff;opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s}
+.revCard.show{opacity:1;transform:none}
+.revCard.mine{border-color:var(--navy);box-shadow:0 0 0 3px rgba(246,166,35,.35)}
+.revHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.revHead .rt{font-weight:800;color:var(--navy);font-size:17px}
+.badge{display:inline-block;color:#fff;font-weight:800;font-size:13px;border-radius:999px;padding:4px 12px;white-space:nowrap}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.col h4{margin:0 0 4px;font-size:15px}
+.col ul{margin:0;padding-left:20px}
+.col li{margin-bottom:4px;font-size:15.5px}
+.plays{margin-top:10px;background:var(--cream);border-radius:10px;padding:10px 12px;font-size:16px}
+.plays b{color:var(--navy)}
+.secLabel{margin-top:22px;font-family:'Fraunces',serif;font-weight:800;font-size:20px;color:var(--navy)}
+.verdict{margin-top:16px;background:var(--navy);color:#fff;border-radius:16px;padding:18px;opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s}
+.verdict.show{opacity:1;transform:none}
+.verdict h3{font-size:24px}
+.verdict .vt{color:var(--amber2);font-weight:800;text-transform:uppercase;font-size:13px;letter-spacing:1px}
+.verdict p{margin:8px 0 0;color:#e5eaf4}
+.extra{margin-top:12px;background:#fff7e6;border-radius:12px;padding:12px 14px}
+.extra b{color:var(--navy)}
+
+/* Follow-up */
+.fu{margin-top:18px}
+.fu label{font-weight:800;color:var(--navy);display:block}
+.fu .ex{font-size:14px;color:var(--muted);margin:2px 0 6px}
+.fu textarea{width:100%;min-height:90px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;resize:vertical}
+.fu textarea:focus{outline:none;border-color:var(--amber)}
+.thread{display:grid;gap:10px;margin-top:12px}
+.msg{padding:10px 14px;border-radius:12px;white-space:pre-wrap;font-size:16px}
+.msg.u{background:#f3f6fc;border:1px solid #dbe3f2;justify-self:end;max-width:85%}
+.msg.a{background:#fff;border:1px solid var(--line)}
+
+/* Loading */
+.loading{display:flex;align-items:center;gap:12px;padding:16px;color:var(--navy);font-weight:700}
+.spin{width:26px;height:26px;border:4px solid var(--line);border-top-color:var(--amber);border-radius:50%;animation:sp 0.8s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err{background:#fdecea;color:#8a1f17;border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:700}
+.hidden{display:none!important}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(20,33,61,.55);display:flex;align-items:flex-start;justify-content:center;padding:20px;z-index:50;overflow:auto}
+.modal .panel{max-width:900px;width:100%;margin-top:30px}
+
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:26px}
+
+@media (max-width:860px){
+  .advGrid{grid-template-columns:repeat(3,1fr)}
+  .banner{grid-template-columns:repeat(6,40%);overflow-x:auto;scroll-snap-type:x mandatory}
+  .bTile{scroll-snap-align:start}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .groups{grid-template-columns:1fr}
+  .advGrid{grid-template-columns:repeat(2,1fr)}
+  .cols{grid-template-columns:1fr}
+  .panel{padding:16px}
+  .btn{flex:1 1 100%}
+}
+</style>
+</head>
+<body>
+
+<!-- Banner of images: upload banner1.jpg … banner6.jpg to the repo to replace the illustrated tiles -->
+<div class="banner" id="banner"></div>
+
+<header class="hero">
+  <h1>The Decision <span>Room</span></h1>
+  <p>A scenario comes up, the outcome stays hidden, and you make the call.</p>
+  <div class="score">
+    <div class="pill">Rounds: <b id="sRounds">0</b></div>
+    <div class="pill">Best Calls: <b id="sBest">0</b></div>
+    <div class="pill">Streak: <b id="sStreak">0</b> 🔥</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="home">
+    <div class="panel" id="advPanel">
+      <span class="step">STEP 1 · OPTIONAL</span>
+      <h2>Choose your advisors</h2>
+      <p class="sub">Pick up to two. They'll weigh in on your answer before you lock it in, but they never know the real outcome.</p>
+      <div class="advGrid" id="advGrid"></div>
+      <div class="advNote" id="advNote">No advisors picked. That's fine, you can go solo.</div>
+    </div>
+
+    <div class="panel">
+      <span class="step">STEP 2</span>
+      <h2>Pick a category</h2>
+      <p class="sub">Each round gives you a fresh scenario with three choices.</p>
+      <div class="groups" id="groups"></div>
+    </div>
+  </section>
+
+  <!-- ROUND -->
+  <section id="round" class="hidden">
+    <div class="panel">
+      <div class="roundTop">
+        <span class="tag" id="rTag"></span>
+        <div>
+          <button class="linkBtn" id="changeAdv">Change advisors</button>
+          <button class="linkBtn" id="backHome">All categories</button>
+        </div>
+      </div>
+      <div id="rBody"></div>
+    </div>
+  </section>
+
+  <footer>The Decision Room · Learn...Wow! · Scenarios are created by AI for learning and fun.</footer>
+</div>
+
+<!-- Advisor modal -->
+<div class="modal hidden" id="advModal">
+  <div class="panel">
+    <h2>Choose your advisors</h2>
+    <p class="sub">Pick up to two, or none.</p>
+    <div class="advGrid" id="advGrid2"></div>
+    <div class="btnRow"><button class="btn" id="advDone">Done</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Data ---------- */
+var GROUPS = [
+  {name:'Pro & Career', icon:'💼', cats:[
+    {id:'final', name:'Final Seconds', icon:'⏱️', desc:'Tie game, clock running. You make the call.'},
+    {id:'founder', name:"The Founder's Desk", icon:'🚀', desc:'Launch, pitch, price and grow.'},
+    {id:'money', name:'Money Moves', icon:'💰', desc:'Windfalls, big buys, too-good-to-be-true offers.'}
+  ]},
+  {name:'Learning & Knowledge', icon:'📚', cats:[
+    {id:'science', name:'Science Lab', icon:'🔬', desc:'Experiments and real science history.'},
+    {id:'history', name:"History's Turning Points", icon:'🏛️', desc:'Real moments. See what really happened.'},
+    {id:'law', name:'Law & Justice', icon:'⚖️', desc:'Juror calls, "is this legal?", fake cases.'}
+  ]},
+  {name:'Home & Life', icon:'🏡', cats:[
+    {id:'ethics', name:'Everyday Ethics', icon:'🤝', desc:'Found wallets, secrets and fair play.'},
+    {id:'daily', name:'Daily Life', icon:'🥦', desc:'Food, mattresses, jeans, stretches and more.'},
+    {id:'parenting', name:'Parenting Moments', icon:'👨‍👩‍👧', desc:'Screen time, curfews, sibling squabbles.'}
+  ]},
+  {name:'Family & Adventure', icon:'🗺️', cats:[
+    {id:'kids', name:"Kids' Corner", icon:'🧸', desc:'Simple choices for young deciders.'},
+    {id:'treasure', name:'The Treasure Hunt', icon:'💎', desc:'Clues, tunnels and hidden treasure.'},
+    {id:'detective', name:"Detective's Choice", icon:'🔍', desc:'Follow the right lead. Crack the case.'}
+  ]}
+];
+var CAT = {}; GROUPS.forEach(function(g){ g.cats.forEach(function(c){ CAT[c.id]=c; }); });
+
+var ADV = [
+  {id:'gus', name:'Gus', role:'The Gut', cp:'"Feels right. Go with it!"'},
+  {id:'brainerd', name:'Dr. Brainerd', role:'The Brain', cp:'"What do the facts actually say?"'},
+  {id:'sunny', name:'Sunny', role:'The Optimist', cp:'"This could work out great!"'},
+  {id:'doubt', name:'Doubt', role:'The Skeptic', cp:'"What could go wrong?"'},
+  {id:'ace', name:'Ace', role:'The Risk-Taker', cp:'"Fortune favors the brave."'},
+  {id:'pops', name:'Pops', role:'The Wise Old-Timer', cp:'"Back in my day…"'}
+];
+var ADVMAP = {}; ADV.forEach(function(a){ ADVMAP[a.id]=a; });
+
+var BANNER = [
+  {em:'⏱️', cap:'Final Seconds', g:'linear-gradient(135deg,#14213d,#3a5a9a)'},
+  {em:'🚀', cap:"Founder's Desk", g:'linear-gradient(135deg,#f6a623,#e35d2f)'},
+  {em:'🏛️', cap:'History', g:'linear-gradient(135deg,#7b5a3a,#c49a6c)'},
+  {em:'⚖️', cap:'Law & Justice', g:'linear-gradient(135deg,#2b2d42,#6c6f8f)'},
+  {em:'🥦', cap:'Daily Life', g:'linear-gradient(135deg,#1f9d55,#8fd36a)'},
+  {em:'💎', cap:'Treasure Hunt', g:'linear-gradient(135deg,#178a8f,#5ad1c9)'}
+];
+
+/* ---------- Cartoon advisor faces (swap for images later if you like) ---------- */
+function face(id){
+  var eyes='<circle cx="40" cy="54" r="3.4" fill="#1b1f2a"/><circle cx="60" cy="54" r="3.4" fill="#1b1f2a"/>';
+  var f = {
+    gus:{bg:'#f6a623',skin:'#e8b88a',
+      top:'<path d="M22 46 Q50 14 78 46 Z" fill="#c0392b"/><rect x="18" y="43" width="64" height="7" rx="3" fill="#a5281d"/><path d="M60 46 Q80 44 88 50 L62 50 Z" fill="#a5281d"/>',
+      mouth:'<path d="M37 66 Q50 80 63 66 Z" fill="#7a2a1a"/><path d="M40 67 Q50 71 60 67" stroke="#fff" stroke-width="3" fill="none"/>',
+      extra:'<circle cx="33" cy="63" r="4" fill="#f08c7a" opacity=".6"/><circle cx="67" cy="63" r="4" fill="#f08c7a" opacity=".6"/>'},
+    brainerd:{bg:'#3a5a9a',skin:'#f1d3b3',
+      top:'<path d="M24 50 Q22 26 50 24 Q78 26 76 50 Q70 36 50 35 Q30 36 24 50Z" fill="#c9ccd3"/>',
+      mouth:'<path d="M43 69 Q50 72 57 69" stroke="#7a3a2a" stroke-width="3" fill="none" stroke-linecap="round"/>',
+      extra:'<circle cx="40" cy="54" r="8" fill="none" stroke="#1b1f2a" stroke-width="2.5"/><circle cx="60" cy="54" r="8" fill="none" stroke="#1b1f2a" stroke-width="2.5"/><line x1="48" y1="54" x2="52" y2="54" stroke="#1b1f2a" stroke-width="2.5"/><path d="M30 86 L50 80 L70 86 L70 100 L30 100Z" fill="#fff"/>'},
+    sunny:{bg:'#ffd27a',skin:'#f3c9a0',
+      top:'<g stroke="#f6a623" stroke-width="4" stroke-linecap="round"><line x1="50" y1="6" x2="50" y2="14"/><line x1="18" y1="18" x2="24" y2="24"/><line x1="82" y1="18" x2="76" y2="24"/></g><path d="M23 54 Q22 28 50 27 Q78 28 77 54 Q72 38 50 38 Q30 38 23 54Z" fill="#b5651d"/><circle cx="79" cy="40" r="8" fill="#b5651d"/>',
+      mouth:'<path d="M38 65 Q50 78 62 65" stroke="#8a3324" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+      extra:'<circle cx="33" cy="63" r="4.5" fill="#f08c7a" opacity=".55"/><circle cx="67" cy="63" r="4.5" fill="#f08c7a" opacity=".55"/>'},
+    doubt:{bg:'#6c4f9c',skin:'#c99a74',
+      top:'<path d="M24 47 Q24 22 50 22 Q76 22 76 47 Z" fill="#2b2d42"/><rect x="22" y="42" width="56" height="8" rx="4" fill="#44465f"/><circle cx="50" cy="20" r="5" fill="#44465f"/>',
+      mouth:'<path d="M42 70 L58 67" stroke="#5a2a1a" stroke-width="3.2" stroke-linecap="round"/>',
+      extra:'<path d="M34 45 L46 48" stroke="#1b1f2a" stroke-width="3" stroke-linecap="round"/><path d="M54 44 Q60 40 66 43" stroke="#1b1f2a" stroke-width="3" fill="none" stroke-linecap="round"/>'},
+    ace:{bg:'#d1453b',skin:'#e0ac80',
+      top:'<path d="M24 50 Q20 24 50 24 Q82 22 78 46 Q66 30 40 34 Q30 38 24 50Z" fill="#3b2314"/>',
+      mouth:'<path d="M40 67 Q52 76 62 66" stroke="#6a2a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+      extra:'<path d="M30 49 H70 L68 58 Q60 63 53 56 L47 56 Q40 63 32 58 Z" fill="#1b1f2a"/><path d="M34 51 L42 51" stroke="#6a8bd6" stroke-width="2"/>'},
+    pops:{bg:'#1f9d55',skin:'#efc8a6',
+      top:'<path d="M23 58 Q20 40 28 36 Q30 46 32 50Z" fill="#eee"/><path d="M77 58 Q80 40 72 36 Q70 46 68 50Z" fill="#eee"/>',
+      mouth:'<path d="M36 66 Q43 60 50 65 Q57 60 64 66 Q57 70 50 67 Q43 70 36 66Z" fill="#f4f4f4" stroke="#cfcfcf"/>',
+      extra:'<path d="M42 88 L50 84 L58 88 L58 80 L50 84 L42 80Z" fill="#c0392b"/><path d="M34 46 Q40 43 46 46 M54 46 Q60 43 66 46" stroke="#ddd" stroke-width="3" fill="none" stroke-linecap="round"/>'}
+  }[id];
+  return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+ADVMAP[id].name+'"><circle cx="50" cy="50" r="50" fill="'+f.bg+'"/><circle cx="50" cy="57" r="27" fill="'+f.skin+'"/>'+f.top+eyes+f.mouth+f.extra+'</svg>';
+}
+
+/* ---------- State ---------- */
+var S = {advisors:[], cat:null, sc:null, choice:null, phase:'choose', history:[], seen:{}, busy:false};
+var SCORE = {rounds:0,best:0,streak:0};
+try { var sv = JSON.parse(sessionStorage.getItem('dr_score')||'null'); if(sv) SCORE=sv; var sa=JSON.parse(sessionStorage.getItem('dr_adv')||'null'); if(Array.isArray(sa)) S.advisors=sa.filter(function(x){return ADVMAP[x];}).slice(0,2); } catch(e){}
+
+function save(){ try{ sessionStorage.setItem('dr_score',JSON.stringify(SCORE)); sessionStorage.setItem('dr_adv',JSON.stringify(S.advisors)); }catch(e){} }
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function paras(t){ return String(t||'').split(/\n\s*\n/).map(function(p){return '<p>'+esc(p.trim())+'</p>';}).join(''); }
+
+/* ---------- Render: banner, score, advisors, categories ---------- */
+function renderBanner(){
+  $('banner').innerHTML = BANNER.map(function(b,i){
+    return '<div class="bTile" data-i="'+(i+1)+'" style="background-image:'+b.g+'"><span class="em">'+b.em+'</span><span class="cap">'+esc(b.cap)+'</span></div>';
+  }).join('');
+  // Use real images if banner1.jpg … banner6.jpg exist in the project
+  BANNER.forEach(function(b,i){
+    var img=new Image(); img.onload=function(){ var t=document.querySelector('.bTile[data-i="'+(i+1)+'"]'); if(t){ t.style.backgroundImage='url(banner'+(i+1)+'.jpg)'; t.classList.add('hasImg'); } };
+    img.src='banner'+(i+1)+'.jpg';
+  });
+}
+function renderScore(){ $('sRounds').textContent=SCORE.rounds; $('sBest').textContent=SCORE.best; $('sStreak').textContent=SCORE.streak; }
+
+function renderAdvisors(){
+  ['advGrid','advGrid2'].forEach(function(gid){
+    $(gid).innerHTML = ADV.map(function(a){
+      var on = S.advisors.indexOf(a.id)>-1;
+      return '<button type="button" class="adv'+(on?' on':'')+'" data-adv="'+a.id+'" aria-pressed="'+on+'"><span class="chk">✓</span><div class="av">'+face(a.id)+'</div><div class="nm">'+esc(a.name)+'</div><div class="rl">'+esc(a.role)+'</div><div class="cp">'+esc(a.cp)+'</div></button>';
+    }).join('');
+  });
+  var n=S.advisors.length;
+  $('advNote').textContent = n===0 ? "No advisors picked. That's fine, you can go solo." :
+    n===1 ? ADVMAP[S.advisors[0]].name+' is in the room. Pick one more, or keep it one-on-one.' :
+    ADVMAP[S.advisors[0]].name+' and '+ADVMAP[S.advisors[1]].name+' are in the room.';
+}
+function toggleAdv(id){
+  var i=S.advisors.indexOf(id);
+  if(i>-1) S.advisors.splice(i,1);
+  else { if(S.advisors.length>=2) S.advisors.shift(); S.advisors.push(id); }
+  save(); renderAdvisors();
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-adv]'); if(b){ toggleAdv(b.getAttribute('data-adv')); }
+});
+
+function renderGroups(){
+  $('groups').innerHTML = GROUPS.map(function(g){
+    return '<div class="group"><h3><span>'+g.icon+'</span>'+esc(g.name)+'</h3><div class="catBtns">'+
+      g.cats.map(function(c){ return '<button type="button" class="cat" data-cat="'+c.id+'"><span class="ci">'+c.icon+'</span><span><div class="ct">'+esc(c.name)+'</div><div class="cd">'+esc(c.desc)+'</div></span></button>'; }).join('')+
+      '</div></div>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cat]'),function(b){
+    b.addEventListener('click',function(){ startRound(b.getAttribute('data-cat')); });
+  });
+}
+
+/* ---------- API ---------- */
+function api(payload){
+  return fetch('/api/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){ return r.json().catch(function(){return {error:'Something went wrong. Please try again.'};}).then(function(j){ if(!r.ok||j.error) throw new Error(j.error||'Something went wrong.'); return j; }); });
+}
+var LOADMSG = {
+  scenario:['Setting the scene…','Hiding the outcome…','Shuffling the choices…'],
+  advisors:['Your advisors are huddling…','Hmm, let them think…'],
+  reveal:['Rolling out the outcomes…','Checking every path…','Here it comes…'],
+  followup:['Thinking it over…']
+};
+function loader(kind){
+  var m=LOADMSG[kind]||['Working…'], i=0;
+  var el=document.createElement('div'); el.className='loading'; el.innerHTML='<div class="spin"></div><span>'+m[0]+'</span>';
+  var t=setInterval(function(){ i=(i+1)%m.length; var s=el.querySelector('span'); if(s) s.textContent=m[i]; },1800);
+  el._stop=function(){ clearInterval(t); if(el.parentNode) el.parentNode.removeChild(el); };
+  return el;
+}
+function showErr(where,msg){ var d=document.createElement('div'); d.className='err'; d.textContent=msg; where.appendChild(d); }
+
+/* ---------- Round flow ---------- */
+function show(view){ $('home').classList.toggle('hidden',view!=='home'); $('round').classList.toggle('hidden',view!=='round'); window.scrollTo({top:0,behavior:'smooth'}); postHeight(); }
+
+function startRound(catId){
+  S.cat=catId; S.sc=null; S.choice=null; S.phase='choose'; S.history=[];
+  var c=CAT[catId];
+  $('rTag').textContent=c.icon+' '+c.name;
+  show('round');
+  var body=$('rBody'); body.innerHTML='';
+  var L=loader('scenario'); body.appendChild(L);
+  api({action:'scenario',category:catId,seen:S.seen[catId]||[]}).then(function(sc){
+    L._stop(); S.sc=sc;
+    (S.seen[catId]=S.seen[catId]||[]).push(sc.title);
+    renderScenario();
+  }).catch(function(e){ L._stop(); showErr(body,e.message); addRetry(body,function(){startRound(catId);}); });
+}
+function addRetry(where,fn){ var r=document.createElement('div'); r.className='btnRow'; r.innerHTML='<button class="btn">Try again</button>'; r.querySelector('button').onclick=fn; where.appendChild(r); }
+
+function renderScenario(){
+  var sc=S.sc, body=$('rBody');
+  var locked = S.phase!=='choose';
+  body.innerHTML =
+    '<h2 class="scTitle">'+esc(sc.title)+'</h2>'+
+    '<div class="setup">'+paras(sc.setup)+'</div>'+
+    '<div class="question">'+esc(sc.question)+'</div>'+
+    '<div class="opts">'+sc.options.map(function(o){
+      return '<button type="button" class="opt'+(S.choice===o.id?' sel':'')+'" data-opt="'+o.id+'"'+(locked?' disabled':'')+'><span class="lt">'+o.id+'</span><span>'+esc(o.text)+'</span></button>';
+    }).join('')+'</div>'+
+    (S.phase==='choose' ? '<div class="btnRow"><button class="btn amber" id="submitBtn"'+(S.choice?'':' disabled')+'>Submit my answer</button></div>' : '')+
+    (sc.disclaimer ? '<div class="disc">'+esc(sc.disclaimer)+'</div>' : '')+
+    '<div id="stage"></div>';
+  Array.prototype.forEach.call(body.querySelectorAll('[data-opt]'),function(b){
+    b.addEventListener('click',function(){ if(S.phase!=='choose') return; S.choice=b.getAttribute('data-opt'); renderScenario(); });
+  });
+  var sb=$('submitBtn'); if(sb) sb.onclick=areYouSure;
+  postHeight();
+}
+
+function areYouSure(){
+  if(!S.choice||S.busy) return;
+  S.phase='confirm'; renderScenario();
+  var stage=$('stage');
+  var box=document.createElement('div'); box.className='sure';
+  var chosen=S.sc.options.filter(function(o){return o.id===S.choice;})[0];
+  box.innerHTML='<h3>Are you sure?</h3><p class="sub" style="margin-bottom:0">You picked <b>'+chosen.id+') '+esc(chosen.text)+'</b></p><div class="bubbles" id="bubbles"></div>'+
+    '<div class="btnRow"><button class="btn amber" id="lockBtn">🔒 Lock it in</button><button class="btn ghost" id="switchBtn">↩ Switch my answer</button></div>';
+  stage.appendChild(box);
+  $('lockBtn').onclick=lockIn;
+  $('switchBtn').onclick=function(){ S.phase='choose'; renderScenario(); };
+  if(S.advisors.length){
+    var bw=$('bubbles'), L=loader('advisors'); bw.appendChild(L);
+    $('lockBtn').disabled=true; $('switchBtn').disabled=true;
+    api({action:'advisors',token:S.sc.token,choice:S.choice,advisors:S.advisors}).then(function(r){
+      L._stop();
+      (r.comments||[]).forEach(function(c,i){
+        var a=ADVMAP[c.id]; if(!a) return;
+        var d=document.createElement('div'); d.className='bub'+(i%2?' alt':'');
+        d.innerHTML='<div class="av">'+face(c.id)+'</div><div class="bt"><div class="bn">'+esc(a.name)+' · '+esc(a.role)+'</div>'+esc(c.text)+'</div>';
+        bw.appendChild(d);
+      });
+    }).catch(function(e){ L._stop(); showErr(bw,'Your advisors stepped out for a second. You can still lock it in.'); })
+      .then(function(){ var l=$('lockBtn'),s=$('switchBtn'); if(l) l.disabled=false; if(s) s.disabled=false; postHeight(); });
+  }
+  postHeight();
+}
+
+var RCOL = {'Best Call':'var(--best)','Solid Call':'var(--solid)','Good Call':'var(--solid)','Risky Call':'var(--risky)','Wrong Call':'var(--wrong)','Try Again Call':'var(--wrong)'};
+function badge(r){ return '<span class="badge" style="background:'+(RCOL[r]||'var(--muted)')+'">'+esc(r)+'</span>'; }
+
+function lockIn(){
+  if(S.busy) return; S.busy=true;
+  S.phase='revealed'; renderScenario();
+  var stage=$('stage'); var L=loader('reveal'); stage.appendChild(L);
+  api({action:'reveal',token:S.sc.token,choice:S.choice}).then(function(r){
+    L._stop(); S.rev=r;
+    // Score
+    SCORE.rounds++;
+    if(r.myRating==='Best Call') SCORE.best++;
+    if(r.myRating==='Best Call'||r.myRating==='Solid Call'||r.myRating==='Good Call') SCORE.streak++; else SCORE.streak=0;
+    save(); renderScore();
+    renderReveal(r);
+  }).catch(function(e){ L._stop(); showErr(stage,e.message); addRetry(stage,function(){ S.busy=false; lockIn(); }); })
+    .then(function(){ S.busy=false; });
+}
+
+function renderReveal(r){
+  var stage=$('stage'); stage.innerHTML='';
+  var others=r.sections.filter(function(s){return !s.mine;}), mine=r.sections.filter(function(s){return s.mine;})[0];
+  var cards=[];
+  function card(s){
+    var d=document.createElement('div'); d.className='revCard'+(s.mine?' mine':'');
+    d.innerHTML='<div class="revHead"><div class="rt">'+s.id+') '+esc(s.text)+'</div>'+badge(s.rating)+'</div>'+
+      '<div class="cols"><div class="col"><h4 style="color:var(--best)">✅ What could go right</h4><ul>'+s.right.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>'+
+      '<div class="col"><h4 style="color:var(--risky)">⚠️ What could go wrong</h4><ul>'+s.wrong.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>'+
+      (s.playsOut?'<div class="plays"><b>How it plays out:</b> '+esc(s.playsOut)+'</div>':'');
+    return d;
+  }
+  var l1=document.createElement('div'); l1.className='secLabel'; l1.textContent='First, the choices you didn’t make'; stage.appendChild(l1);
+  others.forEach(function(s){ var c=card(s); stage.appendChild(c); cards.push(c); });
+  var l2=document.createElement('div'); l2.className='secLabel'; l2.textContent='And now… your choice'; l2.style.opacity='0'; l2.style.transition='opacity .5s'; stage.appendChild(l2); cards.push(l2);
+  var mc=card(mine); stage.appendChild(mc); cards.push(mc);
+
+  var vt={one:'One right answer',two:'Two good answers',all:'All three can work'}[r.verdictType]||'The verdict';
+  var cheer={'Best Call':'Best Call! 🎉','Solid Call':'Solid Call 👍','Good Call':'Good Call 👍','Risky Call':'Risky Call 😬','Wrong Call':'Wrong Call, but now you know 💡','Try Again Call':'Try Again Call. Good try! 💡'}[r.myRating]||r.myRating;
+  var v=document.createElement('div'); v.className='verdict';
+  v.innerHTML='<div class="vt">'+esc(vt)+'</div><h3>Your call: '+esc(cheer)+'</h3><p>'+esc(r.verdict)+'</p>';
+  stage.appendChild(v); cards.push(v);
+
+  var ex=document.createElement('div');
+  var catIsHistory=S.cat==='history';
+  ex.innerHTML=(r.takeaway?'<div class="extra"><b>💡 The takeaway:</b> '+esc(r.takeaway)+'</div>':'')+
+    (r.realWorld?'<div class="extra"><b>'+(catIsHistory?'📜 What really happened:':'🌎 In real life:')+'</b> '+esc(r.realWorld)+'</div>':'')+
+    (r.disclaimer?'<div class="disc">'+esc(r.disclaimer)+'</div>':'')+
+    '<div class="fu"><label for="fuBox">Got a question about this one?</label><div class="ex">Example: Why was the other choice riskier? You can type or ask anything about this round.</div>'+
+    '<textarea id="fuBox" aria-label="Your follow-up question"></textarea><div class="btnRow"><button class="btn" id="fuSend">Ask</button></div><div class="thread" id="thread"></div></div>'+
+    '<div class="btnRow"><button class="btn amber" id="nextBtn">Next scenario in '+esc(CAT[S.cat].name)+'</button><button class="btn ghost" id="homeBtn">Pick a new category</button></div>';
+  ex.style.opacity='0'; ex.style.transition='opacity .5s'; stage.appendChild(ex); cards.push(ex);
+
+  // Staged reveal: other choices, then yours, then the verdict
+  cards.forEach(function(c,i){ setTimeout(function(){ if(c.classList.contains('revCard')||c.classList.contains('verdict')) c.classList.add('show'); else c.style.opacity='1'; postHeight(); }, 350+i*900); });
+
+  $('fuSend').onclick=askFollow;
+  $('nextBtn').onclick=function(){ startRound(S.cat); };
+  $('homeBtn').onclick=function(){ show('home'); };
+  postHeight();
+}
+
+function askFollow(){
+  var box=$('fuBox'), q=box.value.trim(); if(!q||S.busy) return;
+  var th=$('thread'); S.busy=true;
+  var u=document.createElement('div'); u.className='msg u'; u.textContent=q; th.appendChild(u);
+  box.value='';
+  var L=loader('followup'); th.appendChild(L); $('fuSend').disabled=true;
+  api({action:'followup',token:S.sc.token,choice:S.choice,question:q,history:S.history}).then(function(r){
+    L._stop(); var a=document.createElement('div'); a.className='msg a'; a.textContent=r.answer; th.appendChild(a);
+    S.history.push({role:'user',text:q},{role:'ai',text:r.answer});
+  }).catch(function(e){ L._stop(); showErr(th,e.message); }).then(function(){ S.busy=false; $('fuSend').disabled=false; postHeight(); });
+}
+
+/* ---------- Nav ---------- */
+$('backHome').onclick=function(){ show('home'); };
+$('changeAdv').onclick=function(){ $('advModal').classList.remove('hidden'); };
+$('advDone').onclick=function(){ $('advModal').classList.add('hidden'); };
+$('advModal').addEventListener('click',function(e){ if(e.target===this) this.classList.add('hidden'); });
+
+/* ---------- Auto-height for website embeds ---------- */
+var lastH=0;
+function postHeight(){ setTimeout(function(){ var h=document.documentElement.scrollHeight; if(Math.abs(h-lastH)>4){ lastH=h; try{ parent.postMessage({type:'decision-room-height',height:h},'*'); }catch(e){} } },60); }
+window.addEventListener('resize',postHeight);
+
+renderBanner(); renderScore(); renderAdvisors(); renderGroups(); postHeight();
+})();
+</script>
+</body>
+</html>
