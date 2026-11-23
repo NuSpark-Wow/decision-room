@@ -633,7 +633,10 @@ function lockIn(){
     if(r.myRating==='Best Call') SCORE.best++;
     if(r.myRating==='Best Call'||r.myRating==='Solid Call'||r.myRating==='Good Call') SCORE.streak++; else SCORE.streak=0;
     save(); renderScore();
+    var ch=(S.sc.options||[]).filter(function(o){return o.id===S.choice;})[0];
+    S.picks=(S.picks||[]).concat([{category:(CAT[S.cat]&&CAT[S.cat].name)||'', question:S.sc.question||S.sc.title||'', choice:ch?ch.text:S.choice, rating:r.myRating}]);
     renderReveal(r);
+    if(S.picks.length>=5 && S.picks.length%5===0) showStyleCard();
   }).catch(function(e){ L._stop(); showErr(stage,e.message); addRetry(stage,function(){ S.busy=false; lockIn(); }); })
     .then(function(){ S.busy=false; });
 }
@@ -678,6 +681,20 @@ function renderReveal(r){
   $('nextBtn').onclick=function(){ startRound(S.cat,S.sub); };
   $('homeBtn').onclick=function(){ show('home'); };
   postHeight();
+}
+
+// "Your Decision Style": every 5 rounds in a visit, a fun read on how you tend to decide (resets when you leave).
+function showStyleCard(){
+  var stage=$('stage'), box=document.createElement('div');
+  box.className='extra'; box.style.cssText='background:#eef6ff;border:2px solid #9cc3f0;margin-top:16px';
+  box.innerHTML='<b>🧭 Your Decision Style</b><div style="margin-top:6px">Looking at your last '+Math.min(S.picks.length,10)+' calls…</div>';
+  stage.appendChild(box);
+  api({action:'style',picks:S.picks}).then(function(d){
+    box.innerHTML='<b>🧭 Your Decision Style: '+esc(d.title||'')+'</b><p style="margin:6px 0">'+esc(d.summary||'')+'</p>'+
+      (d.strength?'<div><b>Your strength:</b> '+esc(d.strength)+'</div>':'')+(d.tip?'<div style="margin-top:4px"><b>Try next time:</b> '+esc(d.tip)+'</div>':'')+
+      '<div style="font-size:12px;opacity:.7;margin-top:8px">Just for fun, based on this visit only. It starts fresh next time.</div>';
+    postHeight();
+  }).catch(function(){ box.remove(); });
 }
 
 function askFollow(){

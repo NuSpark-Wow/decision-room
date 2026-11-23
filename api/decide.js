@@ -391,6 +391,23 @@ async function reveal(body) {
   };
 }
 
+// "Your Decision Style": after 5 rounds in one visit, a fun, shareable read on how the player tends to decide.
+async function decisionStyle(body) {
+  const picks = (Array.isArray(body.picks) ? body.picks : []).slice(-10).map(p => ({
+    category: clip(p.category, 60), question: clip(p.question, 300), choice: clip(p.choice, 300), rating: clip(p.rating, 30)
+  })).filter(p => p.choice);
+  if (picks.length < 3) throw new Error('Play a few more rounds first');
+  const system = [
+    'You write a short, fun "Decision Style" card for a player of "The Decision Room," a learning game. It is light entertainment, not a personality test or psychological assessment.',
+    'Look only at the choices listed. Describe tendencies in what they picked (for example cautious vs. bold, people-first vs. numbers-first, quick vs. careful), by area when there is a clear pattern (e.g. "You lean cautious on money, bold on career").',
+    'Be warm and encouraging. Never diagnose, label personality types, or judge character. No brands.',
+    'Call the respond tool with: {"title":"a playful 2-4 word style name, like The Careful Captain","summary":"2 sentences describing the pattern, talking to the player as you","strength":"one sentence: what this style does well","tip":"one sentence: one thing to try next time"}'
+  ].join('\n');
+  const user = 'THE PLAYER\'S PICKS THIS VISIT:\n' + picks.map((p, i) => (i + 1) + ') [' + p.category + '] ' + p.question + ' -> chose: ' + p.choice + ' (rated ' + p.rating + ')').join('\n');
+  const d = await claudeJSON(system, user, 900);
+  return { title: clip(d.title, 60), summary: clip(d.summary, 400), strength: clip(d.strength, 240), tip: clip(d.tip, 240) };
+}
+
 async function followup(body) {
   const h = unseal(body.token);
   const cat = CATEGORIES[h.category];
@@ -428,6 +445,7 @@ module.exports = async function handler(req, res) {
     else if (body.action === 'advisors') out = await advisorTalk(body);
     else if (body.action === 'reveal') out = await reveal(body);
     else if (body.action === 'followup') out = await followup(body);
+    else if (body.action === 'style') out = await decisionStyle(body);
     else return res.status(400).json({ error: 'Unknown action' });
     return res.status(200).json(out);
   } catch (e) {
