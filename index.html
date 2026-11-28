@@ -276,6 +276,17 @@ footer{text-align:center;color:var(--muted);font-size:13px;margin-top:26px}
   .panel{padding:16px}
   .btn{flex:1 1 100%}
 }
+
+/* Mr. Paul reads it out loud */
+.listen{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 12px;padding:8px 10px;background:#fff7e6;border:2px solid var(--amber2);border-radius:12px}
+.listen .lb{border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:10px;padding:6px 11px;font-weight:800;font-size:14px;cursor:pointer}
+.listen .lb.main{background:var(--amber);border-color:var(--amber)}
+.listen .lb[disabled]{opacity:.4;cursor:default}
+.listen .sp{margin-left:auto;display:flex;gap:4px;align-items:center;font-size:12px;font-weight:700;color:var(--navy)}
+.listen .sp button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 8px;font-size:12px;cursor:pointer}
+.listen .sp button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.listen .st{font-size:12px;color:#7a6a4a;flex-basis:100%}
+.msg.a .say{display:inline-block;margin-top:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -537,11 +548,80 @@ function loader(kind){
 }
 function showErr(where,msg){ var d=document.createElement('div'); d.className='err'; d.textContent=msg; where.appendChild(d); }
 
+
+/* ---------- Mr. Paul reads it out loud (tap 🔊 Listen; nothing plays by itself) ---------- */
+var V={audio:null, key:'', text:'', state:'idle', speed:'', tts:false, req:0};
+function vStop(){ V.req++; if(V.audio){ try{V.audio.pause();}catch(e){} V.audio=null; } try{ speechSynthesis.cancel(); }catch(e){} V.state='idle'; V.key=''; vPaint(); }
+function vPaint(){
+  Array.prototype.forEach.call(document.querySelectorAll('.listen'),function(b){
+    var me=b.getAttribute('data-k')===V.key, st=me?V.state:'idle';
+    b.querySelector('[data-v=go]').textContent = st==='loading'?'⏳ Getting ready…':(st==='playing'||st==='paused')?'🔊 Listening':'🔊 Listen';
+    b.querySelector('[data-v=go]').disabled = st==='loading'||st==='playing'||st==='paused';
+    b.querySelector('[data-v=pause]').disabled = st!=='playing';
+    b.querySelector('[data-v=cont]').disabled = st!=='paused';
+    b.querySelector('[data-v=stop]').disabled = st==='idle';
+    b.querySelector('[data-v=restart]').disabled = st==='idle'||st==='loading';
+    Array.prototype.forEach.call(b.querySelectorAll('[data-s]'),function(x){ x.classList.toggle('on',x.getAttribute('data-s')===V.speed); });
+    var t=b.querySelector('.st'); if(t) t.textContent = me&&V.tts ? 'Mr. Paul’s voice is resting, so your device’s voice is reading.' : '';
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.say'),function(x){ x.textContent = (x.getAttribute('data-k')===V.key&&V.state!=='idle')?'⏹ Stop':'🔊 Listen'; });
+}
+function vPlay(key,text){
+  vStop(); V.key=key; V.text=text; V.state='loading'; V.tts=false; vPaint();
+  var my=++V.req;
+  fetch('/api/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text,speed:V.speed,kid:S.cat==='kids'})})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){
+      if(my!==V.req) return; if(!d||!d.audio) throw 0;
+      var a=new Audio('data:audio/mpeg;base64,'+d.audio); V.audio=a;
+      a.onended=function(){ if(V.audio===a){ V.audio=null; V.state='idle'; V.key=''; vPaint(); } };
+      return a.play().then(function(){ V.state='playing'; vPaint(); });
+    })
+    .catch(function(){ if(my!==V.req) return; vBrowser(text); });
+}
+// backup: the device's own voice, if Mr. Paul's voice isn't available
+function vBrowser(text){
+  if(!window.speechSynthesis){ V.state='idle'; V.key=''; vPaint(); return; }
+  V.tts=true; var u=new SpeechSynthesisUtterance(text); u.rate={slow:.8,fast:1.2}[V.speed]||1;
+  u.onend=function(){ if(V.tts&&V.state!=='idle'){ V.state='idle'; V.key=''; vPaint(); } };
+  speechSynthesis.cancel(); speechSynthesis.speak(u); V.state='playing'; vPaint();
+}
+function vPause(){ if(V.state!=='playing') return; if(V.audio) V.audio.pause(); else try{speechSynthesis.pause();}catch(e){} V.state='paused'; vPaint(); }
+function vCont(){ if(V.state!=='paused') return; if(V.audio) V.audio.play().catch(function(){}); else try{speechSynthesis.resume();}catch(e){} V.state='playing'; vPaint(); }
+function vRestart(){ if(V.state==='idle') return; if(V.audio&&!V.tts){ V.audio.currentTime=0; V.audio.play().catch(function(){}); V.state='playing'; vPaint(); } else vPlay(V.key,V.text); }
+function listenBar(key){
+  return '<div class="listen" data-k="'+key+'"><button type="button" class="lb main" data-v="go">🔊 Listen</button><button type="button" class="lb" data-v="pause">⏸ Pause</button><button type="button" class="lb" data-v="cont">▶ Continue</button><button type="button" class="lb" data-v="restart">↺ Restart</button><button type="button" class="lb" data-v="stop">⏹ Stop</button>'+
+    '<span class="sp">Speed <button type="button" data-s="slow">Slower</button><button type="button" data-s="">Normal</button><button type="button" data-s="fast">Faster</button></span><span class="st"></span></div>';
+}
+function wireListen(root,key,getText){
+  var b=root.querySelector('.listen[data-k="'+key+'"]'); if(!b) return;
+  b.querySelector('[data-v=go]').onclick=function(){ vPlay(key,getText()); };
+  b.querySelector('[data-v=pause]').onclick=vPause;
+  b.querySelector('[data-v=cont]').onclick=vCont;
+  b.querySelector('[data-v=restart]').onclick=vRestart;
+  b.querySelector('[data-v=stop]').onclick=vStop;
+  Array.prototype.forEach.call(b.querySelectorAll('[data-s]'),function(x){ x.onclick=function(){ V.speed=x.getAttribute('data-s'); var playing=V.key===key&&V.state!=='idle'; vPaint(); if(playing) vPlay(key,getText()); }; });
+  vPaint();
+}
+function scenarioText(){
+  var sc=S.sc; if(!sc) return '';
+  return [sc.title+'.', String(sc.setup||'').replace(/\s*\n\s*/g,' '), sc.question].concat((sc.options||[]).map(function(o){ return o.id+'. '+o.text+'.'; })).join(' ');
+}
+function revealText(r){
+  var mine=(r.sections||[]).filter(function(s){return s.mine;})[0];
+  var parts=['Your call: '+String(r.myRating||'')+'.', r.verdict||''];
+  if(mine&&mine.playsOut) parts.push('How your choice plays out: '+mine.playsOut);
+  if(r.takeaway) parts.push('The takeaway: '+r.takeaway);
+  if(r.realWorld) parts.push((r.history?'What really happened: ':'In real life: ')+r.realWorld);
+  return parts.join(' ');
+}
+
 /* ---------- Round flow ---------- */
-function show(view){ $('home').classList.toggle('hidden',view!=='home'); $('round').classList.toggle('hidden',view!=='round'); window.scrollTo({top:0,behavior:'smooth'}); postHeight(); }
+function show(view){ vStop(); $('home').classList.toggle('hidden',view!=='home'); $('round').classList.toggle('hidden',view!=='round'); window.scrollTo({top:0,behavior:'smooth'}); postHeight(); }
 
 function startRound(catId,sub,topic){
   if(S.busy) return;
+  vStop();
   if(catId==='custom'){ if(topic!=null) S.topic=topic; } else S.topic='';
   S.cat=catId; S.sub=sub||'mix'; S.sc=null; S.choice=null; S.phase='choose'; S.history=[]; S.comments=[]; S.secondUsed=false;
   var c=CAT[catId], sl=subLabel(catId,S.sub);
@@ -565,6 +645,7 @@ function renderScenario(){
   var locked = S.phase!=='choose';
   body.innerHTML =
     '<h2 class="scTitle">'+esc(sc.title)+'</h2>'+
+    (locked ? '' : listenBar('sc'))+
     '<div class="setup">'+paras(sc.setup)+'</div>'+
     '<div class="question">'+esc(sc.question)+'</div>'+
     '<div class="opts">'+sc.options.map(function(o){
@@ -577,6 +658,7 @@ function renderScenario(){
     b.addEventListener('click',function(){ if(S.phase!=='choose') return; S.choice=b.getAttribute('data-opt'); renderScenario(); });
   });
   var sb=$('submitBtn'); if(sb) sb.onclick=areYouSure;
+  wireListen(body,'sc',scenarioText);
   postHeight();
 }
 
@@ -685,7 +767,7 @@ function renderReveal(r){
   var vt={one:'One right answer',two:'Two good answers',all:'All three can work'}[r.verdictType]||'The verdict';
   var cheer={'Best Call':'Best Call! 🎉','Solid Call':'Solid Call 👍','Good Call':'Good Call 👍','Risky Call':'Risky Call 😬','Wrong Call':'Wrong Call, but now you know 💡','Try Again Call':'Try Again Call. Good try! 💡'}[r.myRating]||r.myRating;
   var v=document.createElement('div'); v.className='verdict';
-  v.innerHTML='<div class="vt">'+esc(vt)+'</div><h3>Your call: '+esc(cheer)+'</h3><p>'+esc(r.verdict)+'</p>';
+  v.innerHTML='<div class="vt">'+esc(vt)+'</div><h3>Your call: '+esc(cheer)+'</h3>'+listenBar('rev')+'<p>'+esc(r.verdict)+'</p>';
   stage.appendChild(v); cards.push(v);
 
   var ex=document.createElement('div');
@@ -701,6 +783,7 @@ function renderReveal(r){
   // Staged reveal: other choices, then yours, then the verdict
   cards.forEach(function(c,i){ setTimeout(function(){ if(c.classList.contains('revCard')||c.classList.contains('verdict')) c.classList.add('show'); else c.style.opacity='1'; postHeight(); }, 350+i*900); });
 
+  wireListen(v,'rev',function(){ return revealText(r); });
   $('fuSend').onclick=askFollow;
   $('nextBtn').onclick=function(){ startRound(S.cat,S.sub); };
   $('homeBtn').onclick=function(){ show('home'); };
@@ -728,7 +811,10 @@ function askFollow(){
   box.value='';
   var L=loader('followup'); th.appendChild(L); $('fuSend').disabled=true;
   api({action:'followup',token:S.sc.token,choice:S.choice,question:q,history:S.history}).then(function(r){
-    L._stop(); var a=document.createElement('div'); a.className='msg a'; a.textContent=r.answer; th.appendChild(a);
+    L._stop(); var a=document.createElement('div'); a.className='msg a'; a.textContent=r.answer;
+    var k='fu'+S.history.length, sb2=document.createElement('button'); sb2.type='button'; sb2.className='say'; sb2.setAttribute('data-k',k); sb2.textContent='🔊 Listen';
+    sb2.onclick=function(){ if(V.key===k&&V.state!=='idle') vStop(); else vPlay(k,r.answer); };
+    a.appendChild(document.createElement('br')); a.appendChild(sb2); th.appendChild(a);
     S.history.push({role:'user',text:q},{role:'ai',text:r.answer});
   }).catch(function(e){ L._stop(); showErr(th,e.message); }).then(function(){ S.busy=false; $('fuSend').disabled=false; postHeight(); });
 }
